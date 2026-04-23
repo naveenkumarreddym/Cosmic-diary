@@ -2,7 +2,7 @@
 
 > Offline Western &amp; Vedic astrology calculator with personal diary, computed entirely in your browser. Zero network calls after page load.
 
-**Live demo:** https://naveenkumarreddym.github.io/cosmic-diary/
+**Live demo:** https://naveenkumarreddym.github.io/Cosmic-diary/
 
 **Range:** 369 CE – 3369 CE &nbsp;&middot;&nbsp; **Accuracy:** ≤ 1′ for planets, arc-seconds for Sun/Moon across most of the range.
 

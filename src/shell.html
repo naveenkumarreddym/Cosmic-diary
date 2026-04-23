@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Offline Western and Vedic astrology chart calculator with Vimshottari Dasha, transits, and AI prompt generator. Works in any browser without internet.">
+<title>Cosmic Diary — Offline Western &amp; Vedic Astrology</title>
+<style>
+/*__CSS__*/
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="logo">
+        <span class="logo-glyph">☉</span>
+        <span class="logo-glyph logo-moon">☽</span>
+      </div>
+      <h1>Cosmic Diary</h1>
+      <p class="tagline">Western &amp; Vedic astrology — fully offline, 369 CE – 3369 CE</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="card input-card" id="input-card">
+      <div class="card-header">
+        <h2>Birth details</h2>
+        <button type="button" id="btn-toggle-input" class="btn-icon" title="Collapse / expand" aria-label="Collapse or expand birth details">▾</button>
+      </div>
+      <form id="birth-form" autocomplete="off">
+        <div class="field">
+          <label for="name">Name (optional)</label>
+          <input type="text" id="name" placeholder="e.g. Arjuna">
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="dob">Date of birth</label>
+            <input type="date" id="dob" required min="0369-01-01" max="3369-12-31">
+          </div>
+          <div class="field">
+            <label for="tob">Time of birth (local)</label>
+            <input type="time" id="tob" step="1" required value="12:00:00">
+          </div>
+        </div>
+
+        <div class="field place-field">
+          <label for="place-search">Birth place (type to search)</label>
+          <input type="text" id="place-search" placeholder="e.g. Hyderabad" autocomplete="off">
+          <div class="suggestions" id="place-suggestions" role="listbox"></div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="lat">Latitude (°)</label>
+            <input type="number" id="lat" step="0.000001" min="-90" max="90" placeholder="17.385044" required>
+            <small class="hint">North +, South −</small>
+          </div>
+          <div class="field">
+            <label for="lon">Longitude (°)</label>
+            <input type="number" id="lon" step="0.000001" min="-180" max="180" placeholder="78.486671" required>
+            <small class="hint">East +, West −</small>
+          </div>
+          <div class="field">
+            <label for="tz">UTC offset (h)</label>
+            <input type="number" id="tz" step="any" min="-14" max="14" value="5.5" required>
+            <small class="hint">e.g. 5.5 (IST), 5.8909 (Calcutta LMT), −5 (EST), 0 (UTC)</small>
+          </div>
+        </div>
+
+        <details class="advanced">
+          <summary>Chart settings</summary>
+          <div class="field-row">
+            <div class="field">
+              <label for="ayanamsa">Ayanamsa</label>
+              <select id="ayanamsa">
+                <option value="lahiri">Lahiri (Chitrapaksha)</option>
+                <option value="pushya">Pushya Paksha</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="house-system">Western houses</label>
+              <select id="house-system">
+                <option value="placidus">Placidus</option>
+                <option value="whole-sign">Whole Sign</option>
+                <option value="koch">Koch</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="node-type">Lunar node</label>
+              <select id="node-type">
+                <option value="mean">Mean Node</option>
+                <option value="true">True Node</option>
+              </select>
+            </div>
+          </div>
+        </details>
+
+        <div class="actions">
+          <button type="submit" class="btn-primary">Calculate chart</button>
+          <button type="button" id="btn-sample" class="btn-ghost">Load sample</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="results" class="results hidden">
+      <div class="summary" id="summary"></div>
+
+      <nav class="tabs" role="tablist">
+        <button class="tab-btn" data-tab="western" role="tab">Western</button>
+        <button class="tab-btn" data-tab="vedic-n" role="tab">Vedic · North</button>
+        <button class="tab-btn active" data-tab="vedic-s" role="tab">Vedic · South</button>
+        <button class="tab-btn" data-tab="tables" role="tab">Positions</button>
+        <button class="tab-btn" data-tab="dasha" role="tab">Dasha</button>
+        <button class="tab-btn" data-tab="transits" role="tab">Transits &amp; Events</button>
+        <button class="tab-btn" data-tab="prompt" role="tab">AI Prompt</button>
+      </nav>
+
+      <div class="tab-panels">
+        <div class="tab-panel" id="panel-western">
+          <div class="chart-toolbar">
+            <div class="zoom-group" data-zoom-target="western-chart">
+              <button type="button" class="btn-icon zoom-out" title="Zoom out">−</button>
+              <span class="zoom-label">100%</span>
+              <button type="button" class="btn-icon zoom-in" title="Zoom in">+</button>
+              <button type="button" class="btn-icon zoom-reset" title="Reset zoom">⟲</button>
+            </div>
+          </div>
+          <div class="chart-wrap" id="western-chart"></div>
+          <div class="aspect-list" id="western-aspects"></div>
+        </div>
+
+        <div class="tab-panel" id="panel-vedic-n">
+          <div class="chart-toolbar">
+            <div class="zoom-group" data-zoom-target="vedic-n-chart">
+              <button type="button" class="btn-icon zoom-out" title="Zoom out">−</button>
+              <span class="zoom-label">100%</span>
+              <button type="button" class="btn-icon zoom-in" title="Zoom in">+</button>
+              <button type="button" class="btn-icon zoom-reset" title="Reset zoom">⟲</button>
+            </div>
+            <button type="button" id="btn-toggle-vargas-n" class="btn-ghost btn-small">Show divisional charts ▾</button>
+          </div>
+          <div class="chart-wrap" id="vedic-n-chart"></div>
+          <div class="chart-meta" id="vedic-n-meta"></div>
+          <div class="vargas-panel hidden" id="vargas-panel-n">
+            <h3>Divisional charts (Vargas) — South Indian layout</h3>
+            <p class="muted">Each divisional chart looks at a different life area. The main Rāśi (D1) above is the overall picture; these refine specific domains.</p>
+            <div class="vargas-grid" id="vargas-grid-n"></div>
+          </div>
+        </div>
+
+        <div class="tab-panel active" id="panel-vedic-s">
+          <div class="chart-toolbar">
+            <div class="zoom-group" data-zoom-target="vedic-s-chart">
+              <button type="button" class="btn-icon zoom-out" title="Zoom out">−</button>
+              <span class="zoom-label">100%</span>
+              <button type="button" class="btn-icon zoom-in" title="Zoom in">+</button>
+              <button type="button" class="btn-icon zoom-reset" title="Reset zoom">⟲</button>
+            </div>
+            <button type="button" id="btn-toggle-vargas-s" class="btn-ghost btn-small">Show divisional charts ▾</button>
+          </div>
+          <div class="chart-wrap" id="vedic-s-chart"></div>
+          <div class="chart-meta" id="vedic-s-meta"></div>
+          <div class="vargas-panel hidden" id="vargas-panel-s">
+            <h3>Divisional charts (Vargas) — South Indian layout</h3>
+            <p class="muted">Each divisional chart looks at a different life area. The main Rāśi (D1) above is the overall picture; these refine specific domains.</p>
+            <div class="vargas-grid" id="vargas-grid-s"></div>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="panel-tables">
+          <div id="positions-tables"></div>
+        </div>
+
+        <div class="tab-panel" id="panel-dasha">
+          <div id="dasha-view"></div>
+        </div>
+
+        <div class="tab-panel" id="panel-transits">
+          <div class="transit-controls">
+            <div class="field-row">
+              <div class="field">
+                <label for="transit-date">Transit date</label>
+                <input type="date" id="transit-date">
+              </div>
+              <div class="field">
+                <label for="transit-time">Time</label>
+                <input type="time" id="transit-time" value="12:00">
+              </div>
+              <div class="field" style="align-self:flex-end">
+                <button type="button" id="btn-transit-now" class="btn-ghost">Use now</button>
+              </div>
+            </div>
+            <button type="button" id="btn-compute-transit" class="btn-primary">Compute transit</button>
+          </div>
+          <div id="transit-view"></div>
+          <hr class="divider">
+          <h3>Life events scan (Sade Sati, returns, key aspects)</h3>
+          <div class="field-row">
+            <div class="field">
+              <label for="scan-from">From</label>
+              <input type="date" id="scan-from">
+            </div>
+            <div class="field">
+              <label for="scan-to">To</label>
+              <input type="date" id="scan-to">
+            </div>
+            <div class="field" style="align-self:flex-end">
+              <button type="button" id="btn-scan" class="btn-primary">Scan events</button>
+            </div>
+          </div>
+          <div id="events-view"></div>
+        </div>
+
+        <div class="tab-panel" id="panel-prompt">
+          <h3>Ask a question, get an AI-ready prompt</h3>
+          <p class="muted">Type your question. We'll bundle it with your full chart context so any LLM (Claude, ChatGPT, Gemini…) can give you a grounded reading.</p>
+          <textarea id="user-question" rows="3" placeholder="e.g. What does my chart say about my career in the next 2 years?"></textarea>
+          <div class="prompt-opts">
+            <label><input type="checkbox" id="opt-western" checked> Include Western chart</label>
+            <label><input type="checkbox" id="opt-vedic" checked> Include Vedic chart</label>
+            <label><input type="checkbox" id="opt-dasha" checked> Include current Dasha</label>
+            <label><input type="checkbox" id="opt-transits" checked> Include current transits</label>
+          </div>
+          <button type="button" id="btn-gen-prompt" class="btn-primary">Generate prompt</button>
+          <div class="prompt-output-wrap hidden" id="prompt-output-wrap">
+            <div class="prompt-actions">
+              <button type="button" id="btn-copy-prompt" class="btn-ghost">📋 Copy to clipboard</button>
+              <span class="prompt-chars" id="prompt-chars"></span>
+            </div>
+            <pre id="prompt-output"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card diary-card">
+      <div class="card-header">
+        <h2>Diary</h2>
+        <button type="button" id="btn-toggle-diary" class="btn-icon" title="Collapse / expand" aria-label="Collapse or expand diary">▾</button>
+      </div>
+      <p class="about-sub" style="margin-top:-4px;">Note down your dreams, omens, and life events. Saved automatically to this page in your browser — no server involved.</p>
+
+      <nav class="diary-tabs" role="tablist">
+        <button class="diary-tab active" data-diary-tab="dreams" role="tab">Dreams</button>
+        <button class="diary-tab" data-diary-tab="omens" role="tab">Omens</button>
+        <button class="diary-tab" data-diary-tab="events" role="tab">Events</button>
+      </nav>
+
+      <form id="diary-form" class="diary-form" autocomplete="off">
+        <div class="field-row">
+          <div class="field">
+            <label for="diary-date">Date</label>
+            <input type="date" id="diary-date" required>
+          </div>
+          <div class="field">
+            <label for="diary-time">Time</label>
+            <input type="time" id="diary-time" value="12:00">
+          </div>
+        </div>
+        <div class="field">
+          <label for="diary-text">Entry</label>
+          <textarea id="diary-text" rows="3" placeholder="What happened? What did you dream? What did you observe?" required></textarea>
+        </div>
+        <div class="actions">
+          <button type="submit" class="btn-primary">Add entry</button>
+          <button type="button" id="btn-diary-export" class="btn-ghost">Export all (JSON)</button>
+          <label class="btn-ghost diary-import-label">
+            Import&hellip;
+            <input type="file" id="diary-import" accept="application/json,.json" hidden>
+          </label>
+        </div>
+      </form>
+
+      <div class="diary-entries-wrap">
+        <div id="diary-entries" class="diary-entries"></div>
+      </div>
+    </section>
+
+    <section class="card info-card">
+      <details>
+        <summary>About this tool &amp; accuracy notes</summary>
+        <p>This is a self-contained offline astrology calculator. All planetary positions are computed locally using truncated VSOP87 series (planets), a Meeus-style lunar theory (Moon), and Lahiri / Pushya Paksha ayanamsa formulas. No network calls are made after the file is loaded.</p>
+        <ul>
+          <li><strong>Range:</strong> 369 CE – 3369 CE (3000-year window, centered roughly on modern era)</li>
+          <li><strong>Accuracy:</strong> Planet longitudes ≲ 1′ from ~1000 CE onward; degrades to a few arcminutes at the far extremes (369 CE, 3369 CE). Sun/Moon stays within arc-seconds. Fine for all astrological use.</li>
+          <li><strong>Timezone:</strong> You must enter the correct UTC offset for the birth location &amp; era (including DST if applicable). For pre-1970 births in the US/Europe, double-check historical DST.</li>
+          <li><strong>Ayanamsas:</strong> Lahiri (Chitrapaksha, official Indian) uses 23°51′11″ at J2000 inception with secular drift. Pushya Paksha uses the Pushyamī nakshatra midpoint.</li>
+          <li><strong>Dasha:</strong> Vimshottari (120-year cycle) based on Moon's nakshatra.</li>
+          <li><strong>Verify critical cases</strong> against Swiss Ephemeris-based tools (e.g. Jagannatha Hora, Astrodienst).</li>
+        </ul>
+
+        <h4 class="about-subhead">Knowledge links</h4>
+        <p class="about-sub">Recommended external reading/viewing. URLs shown in full so you can inspect before clicking.</p>
+        <ul class="knowledge-links">
+          <li><span class="kl-label">Omens</span> &mdash; <a href="https://bit.ly/3NlKyM0" target="_blank" rel="noopener noreferrer">https://bit.ly/3NlKyM0</a></li>
+          <li><span class="kl-label">Seed</span> &mdash; <a href="https://www.youtube.com/watch?v=EKoCH8HatvE" target="_blank" rel="noopener noreferrer">https://www.youtube.com/watch?v=EKoCH8HatvE</a></li>
+          <li><span class="kl-label">Kalki</span> &mdash; <a href="https://bit.ly/4rpLNg7" target="_blank" rel="noopener noreferrer">https://bit.ly/4rpLNg7</a></li>
+        </ul>
+
+        <h4 class="about-subhead">File integrity &amp; tamper check</h4>
+        <p class="about-sub">This page contains a SHA-256 checksum of its own embedded JavaScript. When the page loads, your browser recomputes the hash and verifies it matches. Any modification to the core logic will break the check.</p>
+        <div id="integrity-status" class="integrity-status">Checking&hellip;</div>
+        <details class="integrity-details">
+          <summary>How to verify independently &amp; what this detects</summary>
+          <p><strong>Automatic self-check (above):</strong> The browser runs <code>crypto.subtle.digest('SHA-256', ...)</code> over the embedded code and compares to a hash baked in at build time. ✓ means the code matches what was built; ⚠ means it has been modified since.</p>
+          <p><strong>Independent verification (recommended):</strong> Note the hash shown above the first time you receive this file. Whenever you re-open or receive a copy from someone else, check that the hash displayed matches your original record. A tampered file with updated code <em>and</em> updated hash will still pass its self-check, but the hash value itself will differ from your record — which is exactly how tampering becomes visible.</p>
+          <p><strong>External command-line verification of the whole file</strong> (strongest check; requires a known-good reference hash):</p>
+          <ul>
+            <li>Linux: <code>sha256sum Cosmic_Diary.html</code></li>
+            <li>macOS: <code>shasum -a 256 Cosmic_Diary.html</code></li>
+            <li>Windows (PowerShell): <code>Get-FileHash Cosmic_Diary.html -Algorithm SHA256</code></li>
+          </ul>
+        </details>
+      </details>
+    </section>
+  </main>
+
+  <footer>
+    <p class="footer-tagline">Save this page (Ctrl/Cmd+S) to use offline. No data leaves your browser. Ever.</p>
+  </footer>
+
+  <!-- Chart zoom modal -->
+  <div id="chart-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-toolbar">
+        <span class="modal-title" id="modal-title"></span>
+        <div class="zoom-group" data-zoom-target="modal-chart">
+          <button type="button" class="btn-icon zoom-out" title="Zoom out">−</button>
+          <span class="zoom-label">100%</span>
+          <button type="button" class="btn-icon zoom-in" title="Zoom in">+</button>
+          <button type="button" class="btn-icon zoom-reset" title="Reset">⟲</button>
+        </div>
+        <button type="button" class="btn-icon modal-close" id="modal-close" title="Close" aria-label="Close">×</button>
+      </div>
+      <div class="modal-chart-wrap" id="modal-chart"></div>
+    </div>
+  </div>
+</div>
+<script id="app-bundle">
+"use strict";
+/*__INTEGRITY_START__*/
+/*__JS__*/
+/*__INTEGRITY_END__*/
+</script>
+<script>
+"use strict";
+// ------------------------------------------------------------------
+// Integrity self-check — hashes the embedded JS bundle and compares
+// to the SHA-256 baked in by the build step.
+// ------------------------------------------------------------------
+(async function runIntegrityCheck() {
+  const EXPECTED_HASH = '__EXPECTED_HASH__';
+  const START_MARKER  = '/*__INTEGRITY_START__*/';
+  const END_MARKER    = '/*__INTEGRITY_END__*/';
+  const statusEl = document.getElementById('integrity-status');
+  if (!statusEl) return;
+  function render(cls, html) {
+    statusEl.className = 'integrity-status ' + cls;
+    statusEl.innerHTML = html;
+  }
+  try {
+    if (!window.crypto || !window.crypto.subtle || !window.TextEncoder) {
+      render('integrity-unknown', '⚠ Integrity check unavailable — your browser lacks the Web Crypto API. Expected hash: <code>' + EXPECTED_HASH + '</code>');
+      return;
+    }
+    const bundleEl = document.getElementById('app-bundle');
+    if (!bundleEl) { render('integrity-fail', '⚠ Bundle element missing'); return; }
+    const txt = bundleEl.textContent;
+    const i1 = txt.indexOf(START_MARKER);
+    const i2 = txt.indexOf(END_MARKER);
+    if (i1 === -1 || i2 === -1 || i2 <= i1) {
+      render('integrity-fail', '⚠ Integrity markers not found or misordered');
+      return;
+    }
+    const payload = txt.substring(i1 + START_MARKER.length, i2);
+    const buf = new TextEncoder().encode(payload);
+    const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+    const hex = Array.from(new Uint8Array(hashBuf))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+    const match = hex === EXPECTED_HASH;
+    if (match) {
+      render('integrity-ok',
+        '✓ <strong>Integrity verified.</strong> The embedded logic matches the hash baked in at build time.<br>' +
+        '<span class="integrity-hash-label">SHA-256 of code bundle:</span> <code class="integrity-hash">' + hex + '</code>');
+    } else {
+      render('integrity-fail',
+        '⚠ <strong>Integrity MISMATCH</strong> — the code has been modified since this file was built.<br>' +
+        '<span class="integrity-hash-label">Expected:</span> <code>' + EXPECTED_HASH + '</code><br>' +
+        '<span class="integrity-hash-label">Computed:</span> <code>' + hex + '</code>');
+    }
+  } catch (e) {
+    render('integrity-fail', '⚠ Integrity check errored: ' + (e && e.message ? e.message : String(e)));
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+# OS junk
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temp files from build
+*.tmp
+bundled.js
+
+# Node (if anyone adds tooling later)
+node_modules/
+package-lock.json
+npm-debug.log
+
+# Python (if anyone extends build tools)
+__pycache__/
+*.pyc
+.venv/

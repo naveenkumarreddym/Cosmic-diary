@@ -1,0 +1,64 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Permissions for GitHub Pages deployment
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Build Cosmic_Diary.html
+        run: bash src/build.sh
+
+      - name: Verify integrity hash matches at rest
+        run: |
+          python3 <<'PY'
+          import hashlib, re
+          html = open("Cosmic_Diary.html").read()
+          START = "/*__INTEGRITY_START__*/"
+          END = "/*__INTEGRITY_END__*/"
+          i1 = html.find(START); i2 = html.find(END)
+          payload = html[i1+len(START):i2]
+          computed = hashlib.sha256(payload.encode()).hexdigest()
+          m = re.search(r"EXPECTED_HASH\s*=\s*'([a-f0-9]{64})'", html)
+          embedded = m.group(1)
+          assert embedded == computed, f"Hash mismatch: embedded={embedded} vs computed={computed}"
+          print(f"Integrity OK: {embedded}")
+          PY
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

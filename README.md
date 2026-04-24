@@ -73,7 +73,7 @@ Note dreams, omens, and events across three tabs. Entries persist in browser `lo
 ## Running it
 
 ### Option 1: Visit the live demo
-https://naveenkumarreddym.github.io/cosmic-diary/
+https://naveenkumarreddym.github.io/Cosmic-diary/
 
 ### Option 2: Download and open locally
 1. Download `Cosmic_Diary.html` from the latest release (or clone this repo)
